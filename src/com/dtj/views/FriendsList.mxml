@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="400" height="300">
+	<s:layout>
+		<s:VerticalLayout/>
+	</s:layout>
+	<fx:Script>
+		<![CDATA[
+			import com.facebook.graph.Facebook;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.events.FlexEvent;
+			
+			import spark.collections.Sort;
+			import spark.collections.SortField;
+			import spark.events.IndexChangeEvent;
+			
+			private var mainList:Object;
+			public var userId:String = "";
+			
+			public function showList():void
+			{
+				txtID.text = userId;
+				var params:Object = new Object();
+				params["fields"] = "id,name,location,picture";
+				Facebook.api("/me/friends",onFbResponse,params);
+			}
+			
+			private function traceResult(result:Object):void{
+				for each(var obj:* in result){
+					trace ("Value = " + obj);
+				}
+			}
+			private function onFbResponse(result:Object, fail:Object):void{
+				if (result) {
+					mainList = result;
+					var arr:ArrayCollection = new ArrayCollection();
+					
+					for each (var obj:Object in result){
+						for (var st:String in obj){
+							if (obj[st].hasOwnProperty('data')){
+								trace("-->",st)
+								for (var st1:String in obj[st].data){
+									trace("--->",st1,obj[st].data[st1])
+								}
+							}else if (obj[st] is Object){
+								trace("-->",st,obj[st])
+								for (var st2:String in obj[st])
+									trace("--->",st2,obj[st][st2])
+							}else
+								trace("->",st,obj[st])
+						}
+						
+						arr.addItem(obj);
+					}
+					var srt:Sort = new Sort();
+					srt.fields = [new SortField("name", false)];
+					arr.sort = srt;
+					arr.refresh();
+					dgList.dataProvider = arr;
+				} else {
+					Alert.show("FAIL:\n" + fail.toString()); 
+				}
+			}
+			
+			protected function showChangeHandler(event:IndexChangeEvent):void
+			{
+				// TODO Auto-generated method stub
+				
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:HGroup width="100%" verticalAlign="middle">
+	<s:Label text="ID:"/>
+	<s:TextInput id="txtID" prompt="Facebook ID" width="100%" enabled="false"/>
+	<s:ComboBox id="cmbShow" change="showChangeHandler(event)"/>
+	<s:Button label="Clear List"/>
+		</s:HGroup>
+	<s:List id="dgList" width="100%" height="100%" itemRenderer="com.dtj.renderer.FriendsListItemRenderer"/>
+</s:Group>
